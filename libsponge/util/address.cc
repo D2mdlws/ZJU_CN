@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <stdexcept>
 #include <system_error>
+#include <array>
 
 using namespace std;
 
@@ -88,8 +89,8 @@ Address::Address(const string &ip, const uint16_t port)
 
 // accessors
 pair<string, uint16_t> Address::ip_port() const {
-    array<char, NI_MAXHOST> ip{};
-    array<char, NI_MAXSERV> port{};
+    std::array<char, NI_MAXHOST> ip{};
+    std::array<char, NI_MAXSERV> port{};
 
     const int gni_ret =
         getnameinfo(_address, _size, ip.data(), ip.size(), port.data(), port.size(), NI_NUMERICHOST | NI_NUMERICSERV);

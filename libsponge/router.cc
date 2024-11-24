@@ -29,14 +29,44 @@ void Router::add_route(const uint32_t route_prefix,
     cerr << "DEBUG: adding route " << Address::from_ipv4_numeric(route_prefix).ip() << "/" << int(prefix_length)
          << " => " << (next_hop.has_value() ? next_hop->ip() : "(direct)") << " on interface " << interface_num << "\n";
 
-    DUMMY_CODE(route_prefix, prefix_length, next_hop, interface_num);
-    // Your code here.
+    _routes.push_back({route_prefix, prefix_length, next_hop, interface_num});
 }
 
 //! \param[in] dgram The datagram to be routed
 void Router::route_one_datagram(InternetDatagram &dgram) {
-    DUMMY_CODE(dgram);
-    // Your code here.
+    // Find the route with the longest prefix that matches the datagram's destination address.
+    optional<Route> best_route;
+    uint32_t dst = dgram.header().dst;
+
+    for (const auto& route : _routes) {
+        uint32_t route_prefix = route._route_prefix;
+        uint8_t prefix_length = route._prefix_length;
+
+        if (prefix_length == 0 ? (true) : (dst >> (32 - prefix_length)) == (route_prefix >> (32 - prefix_length))) { // Match
+            if (!(best_route.has_value()) || prefix_length > best_route.value()._prefix_length) {
+                best_route = route;
+            }
+        }
+    }
+
+    if (best_route.has_value()) {
+        if (dgram.header().ttl == 0) {
+            return; // Drop the datagram if the TTL is zero
+        }
+        dgram.header().ttl -= 1;
+        if (dgram.header().ttl == 0) {
+            return; // Drop the datagram if the TTL is zero
+        }
+
+        if (best_route.value()._next_hop.has_value()) {
+            Address next_hop = best_route.value()._next_hop.value();
+            _interfaces.at(best_route.value()._interface_num).send_datagram(dgram, next_hop);
+        } else {
+            _interfaces.at(best_route.value()._interface_num).send_datagram(dgram, Address::from_ipv4_numeric(dst));
+        }
+    } else {
+        return; // Drop the datagram if no route matches
+    }
 }
 
 void Router::route() {

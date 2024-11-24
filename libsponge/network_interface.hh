@@ -7,6 +7,8 @@
 
 #include <optional>
 #include <queue>
+#include <unordered_map>
+#include <deque>
 
 //! \brief A "network interface" that connects IP (the internet layer, or network layer)
 //! with Ethernet (the network access layer, or link layer).
@@ -40,6 +42,23 @@ class NetworkInterface {
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
 
+    struct struct_arp_entry {
+        EthernetAddress eth_addr;
+        size_t ttl;
+    };
+
+    size_t _timer = 0;
+
+    //! ARP table mapping IP addresses to Ethernet addresses with ttl
+    std::unordered_map<uint32_t, struct_arp_entry> _arp_table{};
+
+    //! ARP requests that have been sent out
+    std::unordered_map<uint32_t, size_t> _arp_requests{};
+    
+    //! Waiting queue for IP datagrams that are waiting for ARP replies
+    std::unordered_map<uint32_t, std::deque<InternetDatagram>> _waiting_datagrams{};
+
+
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
     NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address);
@@ -64,4 +83,4 @@ class NetworkInterface {
     void tick(const size_t ms_since_last_tick);
 };
 
-#endif  // SPONGE_LIBSPONGE_NETWORK_INTERFACE_HH
+#endif  // 
