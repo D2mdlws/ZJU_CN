@@ -1,4 +1,5 @@
-#include "socket.hh"
+// #include "socket.hh"
+#include "tcp_sponge_socket.hh"
 #include "util.hh"
 
 #include <cstdlib>
@@ -18,7 +19,8 @@ void get_URL(const string &host, const string &path) {
     // the "eof" (end of file).
 
     // create a TCP socket, bind it to a local address, and listen
-    TCPSocket sock1;
+    // TCPSocket sock1;
+    FullStackSocket sock1;
     sock1.connect(Address(host, "http"));
 
     std::string request = "GET " + path + " HTTP/1.1\r\n";
@@ -41,6 +43,7 @@ void get_URL(const string &host, const string &path) {
     }
 
     sock1.close();              // don't need to accept any more connections
+    sock1.wait_until_closed();
 
 }
 
